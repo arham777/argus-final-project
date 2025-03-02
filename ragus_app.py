@@ -92,9 +92,15 @@ st.markdown(f"""
     }}
     
     .main {{
-        background-color: {theme['background']};
+        background: linear-gradient(135deg, 
+            {theme['primary']} 0%,
+            {theme['secondary']} 50%,
+            {theme['tertiary']} 100%
+        );
+        background-attachment: fixed;
         color: {theme['text']};
         padding: 1rem;
+        min-height: 100vh;
     }}
     
     /* Streamlit containers */
@@ -102,6 +108,10 @@ st.markdown(f"""
         max-width: 1200px;
         padding-top: 1rem;
         padding-bottom: 3rem;
+        background: {theme['background']};
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
     }}
     
     /* Header styles */
@@ -112,28 +122,57 @@ st.markdown(f"""
     }}
     
     /* Card styles */
-    div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] {{
-        background-color: {theme['surface']};
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        margin-bottom: 1.5rem;
-        border: 1px solid {theme['border']};
-        overflow: hidden;
-    }}
-    
-    /* Contain all elements in cards */
     .custom-section {{
         background-color: {theme['surface']};
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
         margin-bottom: 1.5rem !important;
-        border: 1px solid {theme['border']};
+        border: 1px solid rgba(255, 255, 255, 0.1);
         overflow: hidden;
         padding: 1.5rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         display: flex;
         flex-direction: column;
         align-items: stretch;
         width: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }}
+    
+    .custom-section:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }}
+    
+    /* Gradient banner styles */
+    .gradient-banner {{
+        background: linear-gradient(120deg, 
+            {theme['primary']} 0%,
+            {theme['secondary']} 50%,
+            {theme['tertiary']} 100%
+        );
+        color: white;
+        padding: 1.5rem;
+        margin-bottom: 0 !important;
+        box-shadow: none;
+        border-radius: 8px 8px 0 0;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }}
+    
+    .gradient-banner::after {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+            rgba(255,255,255,0.1) 0%,
+            rgba(255,255,255,0) 100%
+        );
+        pointer-events: none;
     }}
     
     /* Content padding container */
@@ -141,42 +180,48 @@ st.markdown(f"""
         padding: 1.5rem;
     }}
     
-    /* Fix gradient banner to stay within container */
-    .gradient-banner {{
-        background: linear-gradient(120deg, {theme['primary']}, {theme['secondary']});
-        color: white;
-        padding: 1.5rem;
-        margin-bottom: 0 !important;
-        box-shadow: none;
-        border-radius: 0;
-        width: 100%;
-    }}
-    
     /* Button styles */
     .stButton button {{
-        background-color: {theme['secondary']} !important;
+        background: linear-gradient(135deg, {theme['secondary']}, {theme['tertiary']}) !important;
         color: white !important;
         font-weight: 600 !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         border: none !important;
-        padding: 0.5rem 1.5rem !important;
+        padding: 0.75rem 1.5rem !important;
         transition: all 0.3s ease !important;
         width: 100%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
     }}
     
     .stButton button:hover {{
-        background-color: {theme['tertiary']} !important;
-        box-shadow: 0 4px 12px rgba(46, 91, 255, 0.2) !important;
         transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+        background: linear-gradient(135deg, {theme['tertiary']}, {theme['secondary']}) !important;
+    }}
+    
+    .stButton button::after {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+            rgba(255,255,255,0.1) 0%,
+            rgba(255,255,255,0) 100%
+        );
+        pointer-events: none;
     }}
     
     /* Download button */
     .download-btn {{
         display: inline-block;
-        background-color: {theme['secondary']};
+        background: linear-gradient(135deg, {theme['secondary']}, {theme['tertiary']});
         color: white;
         font-weight: 600;
-        border-radius: 6px;
+        border-radius: 8px;
         border: none;
         padding: 0.75rem 1.5rem;
         text-decoration: none;
@@ -185,12 +230,28 @@ st.markdown(f"""
         transition: all 0.3s ease;
         width: 100%;
         margin-bottom: 0.5rem;
+        position: relative;
+        overflow: hidden;
     }}
     
     .download-btn:hover {{
-        background-color: {theme['tertiary']};
-        box-shadow: 0 4px 12px rgba(46, 91, 255, 0.2);
         transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        background: linear-gradient(135deg, {theme['tertiary']}, {theme['secondary']});
+    }}
+    
+    .download-btn::after {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+            rgba(255,255,255,0.1) 0%,
+            rgba(255,255,255,0) 100%
+        );
+        pointer-events: none;
     }}
     
     /* Input styles */
@@ -335,24 +396,6 @@ st.markdown(f"""
         color: {theme['text_secondary']};
     }}
     
-    /* Hover effects */
-    .custom-section:hover {{
-        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-        transition: box-shadow 0.3s ease;
-    }}
-    
-    /* Focus outlines */
-    :focus {{
-        outline-color: {theme['secondary']};
-    }}
-    
-    /* Make sure form elements have proper height */
-    div[data-testid="stTextInput"] input, 
-    div[data-testid="stNumberInput"] input,
-    .stTextArea textarea {{
-        line-height: 1.5;
-    }}
-    
     /* Custom HTML table styles */
     .html-table-wrapper {{
         overflow-x: auto;
@@ -386,21 +429,24 @@ st.markdown(f"""
         background-color: {('rgba(255,255,255,0.02)' if theme_mode=='dark' else 'rgba(0,0,0,0.02)')};
     }}
     
-    /* Card for metrics */
+    /* Metric card styles */
     .metric-card {{
-        background-color: {theme['surface']};
-        border-radius: 8px;
+        background: linear-gradient(145deg, {theme['surface']}, {theme['background']});
+        border-radius: 12px;
         padding: 1.5rem;
         text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        transition: transform 0.3s ease;
-        border: 1px solid {theme['border']};
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         height: 100%;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     .metric-card:hover {{
         transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        background: linear-gradient(145deg, {theme['surface']}, {theme['primary']});
     }}
     
     /* Custom section styles */
