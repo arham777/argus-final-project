@@ -35,8 +35,8 @@ COLORS = {
         'accent': '#27AE60',        # Green
         'background': '#0F172A',    # Very dark blue background
         'surface': '#1E293B',       # Dark blue card background
-        'text': '#F8FAFC',          # Almost white text
-        'text_secondary': '#94A3B8', # Lighter text for secondary elements
+        'text': '#192026FF',          # Almost white text
+        'text_secondary': '#545C69FF', # Lighter text for secondary elements
         'border': '#334155',        # Border color
         'error': '#EF4444',         # Red
     },
