@@ -1119,46 +1119,44 @@ with main_container:
                     # Display detailed results
                     st.subheader("Detailed Results")
                     
-                    # Create custom HTML table instead of using dataframe
-                    results_html = """
-                    <div class="html-table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width: 25%;">Query</th>
-                                    <th style="width: 37.5%;">Response</th>
-                                    <th style="width: 37.5%;">Reference</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    """
+                    # Create a clean DataFrame for display
+                    display_df = pd.DataFrame([{
+                        "Query Type": d["user_input"],
+                        "Generated Response": d["response"],
+                        "Expected Reference": d["reference"],
+                        "Match Status": "✅" if d["response"].lower().strip() == d["reference"].lower().strip() else "❌"
+                    } for d in dataset])
                     
-                    # Add rows with data
-                    for i, d in enumerate(dataset):
-                        # Add zebra striping
-                        bg_color = "#f5f5f5" if i % 2 == 0 else "white"
-                        
-                        # Escape HTML
-                        query = d["user_input"].replace("<", "&lt;").replace(">", "&gt;")
-                        response = d["response"].replace("<", "&lt;").replace(">", "&gt;")
-                        reference = d["reference"].replace("<", "&lt;").replace(">", "&gt;")
-                        
-                        results_html += f"""
-                            <tr style="background-color: {bg_color};">
-                                <td style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: top; word-wrap: break-word;">{query}</td>
-                                <td style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: top; word-wrap: break-word;">{response}</td>
-                                <td style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: top; word-wrap: break-word;">{reference}</td>
-                            </tr>
-                        """
+                    # Style the DataFrame
+                    def color_match_status(val):
+                        color = '#27AE60' if val == '✅' else '#EF4444'
+                        return f'color: {color}'
                     
-                    results_html += """
-                            </tbody>
-                        </table>
-                    </div>
-                    """
+                    styled_df = display_df.style\
+                        .set_properties(**{
+                            'background-color': f'{theme["surface"]}',
+                            'color': f'{theme["text"]}',
+                            'border-color': f'{theme["border"]}',
+                            'padding': '12px 15px',
+                            'text-align': 'left',
+                            'white-space': 'pre-wrap'
+                        })\
+                        .applymap(color_match_status, subset=['Match Status'])\
+                        .set_table_styles([
+                            {'selector': 'th',
+                             'props': [
+                                 ('background-color', f'{theme["primary"]}'),
+                                 ('color', 'white'),
+                                 ('font-weight', '600'),
+                                 ('padding', '12px 15px'),
+                                 ('text-align', 'left')
+                             ]},
+                            {'selector': 'tr:nth-of-type(even)',
+                             'props': [('background-color', 'rgba(0,0,0,0.02)')]},
+                        ])
                     
-                    # Display the custom HTML table
-                    st.markdown(results_html, unsafe_allow_html=True)
+                    # Display the styled DataFrame
+                    st.dataframe(styled_df, use_container_width=True)
                     
                     # Display downloads section within the same container
                     st.markdown("""
@@ -1166,8 +1164,8 @@ with main_container:
                         <h3 class="section-header">Download Reports</h3>
                         <p style="margin-bottom: 1.5rem;">Export evaluation results in your preferred format:</p>
                         
-                        <div style="margin-bottom: 1.5rem;">
-                            <div style="font-weight: 600; margin-bottom: 0.8rem;">Primary Report Format</div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.8rem;">Primary Report Format</div>
                     """, unsafe_allow_html=True)
                     
                     # First emphasize the PDF download (now always available)
