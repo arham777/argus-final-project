@@ -1,214 +1,266 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 const ResultsTable = ({ results, metrics }) => {
   const tableRef = React.useRef();
   const metricsRef = React.useRef();
   const containerRef = React.useRef();
-
+  
+  // High-quality PDF generation function
   const downloadPDF = async () => {
-    if (!containerRef.current || results.length === 0) return;
-
+    if (!results || results.length === 0) return;
+    
+    let loadingElement = null;
+    
     try {
-      // Show a loading indicator while generating PDF
-      const element = document.createElement('div');
-      element.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50';
-      element.innerHTML = '<div class="bg-white p-4 rounded-md shadow-md">Generating PDF...</div>';
-      document.body.appendChild(element);
-
-      // Create a new PDF document
-      const pdfDoc = new jsPDF({
+      // Show loading indicator
+      loadingElement = document.createElement('div');
+      loadingElement.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50';
+      loadingElement.innerHTML = '<div class="bg-white p-4 rounded-md shadow-md">Generating high-quality PDF...</div>';
+      document.body.appendChild(loadingElement);
+      
+      // Set up PDF document
+      const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
-        compress: true
+        compress: true,
+        precision: 2
       });
       
-      // Ensure the autoTable plugin is available on pdfDoc
-      if (typeof pdfDoc.autoTable !== 'function') {
-        if (typeof console !== 'undefined') {
-          console.log('Adding autoTable functionality to jsPDF');
-        }
-        // If autoTable isn't available on the instance, add it manually
-        pdfDoc.autoTable = autoTable;
-      }
+      // Get page dimensions
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
       
-      // Add PDF metadata
-      pdfDoc.setProperties({
+      // Add document metadata
+      doc.setProperties({
         title: 'ARGUS RAG Evaluation Results',
-        subject: 'Evaluation of RAG system performance',
+        subject: 'Evaluation Results for RAG System',
         author: 'ARGUS System',
         creator: 'ARGUS RAG Evaluation Dashboard'
       });
       
-      // Page dimensions
-      const pageWidth = pdfDoc.internal.pageSize.getWidth();
-      const pageHeight = pdfDoc.internal.pageSize.getHeight();
-      const margin = 15;
-      const contentWidth = pageWidth - (margin * 2);
+      // Create professional header
+      doc.setFillColor(0, 102, 255); // Primary blue header
+      doc.rect(0, 0, pageWidth, 20, 'F');
       
-      // Add title
-      pdfDoc.setFontSize(24);
-      pdfDoc.setTextColor(0, 102, 255); // Primary blue
-      pdfDoc.text('ARGUS RAG Evaluation Results', margin, margin + 5);
+      doc.setTextColor(255, 255, 255); // White text for header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('ARGUS RAG Evaluation Results', margin, 13);
       
-      // Add date
-      pdfDoc.setFontSize(10);
-      pdfDoc.setTextColor(100, 100, 100); // Gray
-      const currentDate = new Date().toLocaleString();
-      pdfDoc.text(`Generated on: ${currentDate}`, margin, margin + 12);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin - 50, 13, { align: 'right' });
       
-      // Add horizontal line
-      pdfDoc.setDrawColor(0, 102, 255); // Primary blue
-      pdfDoc.setLineWidth(0.5);
-      pdfDoc.line(margin, margin + 15, pageWidth - margin, margin + 15);
+      // Current Y position tracker
+      let yPos = 30;
       
-      // Add metrics section
+      // Add metrics section with professional styling
       if (metrics) {
-        let yPos = margin + 20;
-        
-        // Title for metrics
-        pdfDoc.setFontSize(16);
-        pdfDoc.setTextColor(60, 60, 60); // Dark gray
-        pdfDoc.text('Evaluation Metrics', margin, yPos);
+        // Section title
+        doc.setTextColor(70, 70, 70);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('Evaluation Metrics', margin, yPos);
         yPos += 8;
         
-        // Background rectangle for metrics
-        pdfDoc.setFillColor(245, 247, 250); // Light blue-gray background
-        pdfDoc.setDrawColor(230, 230, 230); // Light gray border
-        pdfDoc.setLineWidth(0.2);
+        // Create metrics table - professional bordered style
+        const metricWidth = (pageWidth - (margin * 2)) / 3;
         
-        const metricsTableHeight = 15;
-        pdfDoc.roundedRect(margin, yPos, contentWidth, metricsTableHeight, 3, 3, 'FD');
+        // Draw table header for metrics
+        doc.setFillColor(240, 240, 240);
+        doc.setDrawColor(220, 220, 220);
+        doc.rect(margin, yPos, pageWidth - (margin * 2), 8, 'FD');
         
-        // Add metrics data
-        pdfDoc.setFontSize(12);
-        pdfDoc.setTextColor(0, 0, 0);
-        
-        const metricSpacing = contentWidth / 3;
-        Object.entries(metrics).forEach(([key, value], index) => {
-          const xPos = margin + 10 + (index * metricSpacing);
-          
-          // Metric name
-          pdfDoc.setFont(undefined, 'bold');
-          pdfDoc.text(key, xPos, yPos + 6);
-          
-          // Metric value
-          pdfDoc.setFont(undefined, 'normal');
-          pdfDoc.setTextColor(0, 102, 255); // Primary blue
-          pdfDoc.text(`${(value * 100).toFixed(1)}%`, xPos, yPos + 12);
-          pdfDoc.setTextColor(0, 0, 0);
+        // Add metric headers
+        doc.setTextColor(70, 70, 70);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        let xPos = margin + 5;
+        Object.keys(metrics).forEach((key, index) => {
+          doc.text(key, xPos + (metricWidth * index), yPos + 5.5);
         });
         
-        yPos += metricsTableHeight + 10;
-        
-        // Table title
-        pdfDoc.setFontSize(16);
-        pdfDoc.setTextColor(60, 60, 60); // Dark gray
-        pdfDoc.text('Results Table', margin, yPos);
+        // Add metric values
         yPos += 8;
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin, yPos, pageWidth - (margin * 2), 10, 'FD');
         
-        // Prepare table data for autotable
-        const tableHeaders = [
-          { header: 'User Query', dataKey: 'query' },
-          { header: 'Generated Response', dataKey: 'response' },
-          { header: 'Reference Answer', dataKey: 'reference' }
-        ];
+        doc.setTextColor(0, 102, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        xPos = margin + 5;
+        Object.values(metrics).forEach((value, index) => {
+          doc.text(`${(value * 100).toFixed(1)}%`, xPos + (metricWidth * index), yPos + 6.5);
+        });
         
-        const tableData = results.map(result => ({
-          query: result.user_input,
-          response: result.response,
-          reference: result.reference
-        }));
-        
-        // Add table using autotable plugin for perfect rendering
-        try {
-          pdfDoc.autoTable({
-            startY: yPos,
-            head: [['User Query', 'Generated Response', 'Reference Answer']],
-            body: tableData.map(row => [row.query, row.response, row.reference]),
-            headStyles: {
-              fillColor: [245, 247, 250],
-              textColor: [60, 60, 60],
-              fontStyle: 'bold',
-              halign: 'left'
-            },
-            alternateRowStyles: {
-              fillColor: [250, 250, 250]
-            },
-            rowPageBreak: 'auto',
-            bodyStyles: {
-              valign: 'top'
-            },
-            columnStyles: {
-              0: { cellWidth: 45 },
-              1: { cellWidth: 90 },
-              2: { cellWidth: 90 }
-            },
-            margin: { left: margin, right: margin },
-            styles: {
-              overflow: 'linebreak',
-              cellPadding: 4,
-              fontSize: 10,
-              font: 'helvetica',
-              textColor: [60, 60, 60],
-              lineColor: [220, 220, 220],
-              lineWidth: 0.1
-            },
-            didDrawPage: function(data) {
-              // Add header to each page
-              pdfDoc.setFontSize(8);
-              pdfDoc.setTextColor(100, 100, 100);
-              pdfDoc.text('ARGUS RAG Evaluation Results', margin, 10);
-              
-              // Add footer to each page
-              pdfDoc.text(`© ${new Date().getFullYear()} ARGUS RAG Evaluation System`, margin, pageHeight - 10);
-              pdfDoc.text(`Page ${data.pageNumber} of ${data.pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-            }
-          });
-        } catch (tableError) {
-          // Fallback to manual table rendering if autoTable fails
-          if (typeof console !== 'undefined') {
-            console.error('Error with autoTable, using fallback table rendering', tableError);
-          }
-          
-          // Use html2canvas as fallback
-          const canvas = await html2canvas(tableRef.current, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
-          });
-          
-          // Calculate dimensions while preserving aspect ratio
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const imageWidth = contentWidth;
-          const imageHeight = (canvas.height * imageWidth) / canvas.width;
-          
-          // Add table image
-          pdfDoc.addImage(imgData, 'JPEG', margin, yPos, imageWidth, Math.min(imageHeight, pageHeight - yPos - margin - 10));
-          
-          // Add a note about the rendering
-          pdfDoc.setFontSize(8);
-          pdfDoc.setTextColor(100, 100, 100);
-          pdfDoc.text('* Table rendered as image due to compatibility issues.', margin, pageHeight - 15);
-        }
+        yPos += 18; // Move past metrics section
       }
       
-      // Save the PDF
-      pdfDoc.save('argus_rag_evaluation_results.pdf');
+      // Create professional table header
+      doc.setTextColor(70, 70, 70);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Results Table', margin, yPos);
+      yPos += 8;
       
-      // Remove loading indicator
-      document.body.removeChild(element);
+      // Create professional table directly, without using html2canvas
+      // Define column widths for better formatting
+      const colWidths = {
+        userQuery: 60,
+        generatedResponse: 100,
+        referenceAnswer: 100
+      };
+      
+      // Table header row
+      doc.setFillColor(240, 240, 240);
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(margin, yPos, pageWidth - (margin * 2), 10, 'FD');
+      
+      doc.setTextColor(70, 70, 70);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      
+      let colX = margin + 5;
+      doc.text('User Query', colX, yPos + 6);
+      
+      colX += colWidths.userQuery;
+      doc.text('Generated Response', colX, yPos + 6);
+      
+      colX += colWidths.generatedResponse;
+      doc.text('Reference Answer', colX, yPos + 6);
+      
+      yPos += 10;
+      
+      // Draw table data rows
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(50, 50, 50);
+      
+      const pageContentHeight = pageHeight - margin - 15;
+      let currentPage = 1;
+      
+      // Function to add a new page with proper headers
+      const addNewPage = () => {
+        doc.addPage();
+        currentPage++;
+        
+        // Add header to new page
+        doc.setFillColor(0, 102, 255);
+        doc.rect(0, 0, pageWidth, 20, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('ARGUS RAG Evaluation Results (Continued)', margin, 13);
+        
+        // Add table header on new page
+        yPos = 30;
+        
+        doc.setFillColor(240, 240, 240);
+        doc.setDrawColor(220, 220, 220);
+        doc.rect(margin, yPos, pageWidth - (margin * 2), 10, 'FD');
+        
+        doc.setTextColor(70, 70, 70);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        
+        let colX = margin + 5;
+        doc.text('User Query', colX, yPos + 6);
+        
+        colX += colWidths.userQuery;
+        doc.text('Generated Response', colX, yPos + 6);
+        
+        colX += colWidths.generatedResponse;
+        doc.text('Reference Answer', colX, yPos + 6);
+        
+        yPos += 10;
+        
+        // Add footer
+        addFooter(currentPage);
+      };
+      
+      // Function to add footer to each page
+      const addFooter = (pageNum) => {
+        const totalPages = doc.getNumberOfPages();
+        doc.setPage(pageNum);
+        
+        doc.setFillColor(240, 240, 240);
+        doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
+        
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`© ${new Date().getFullYear()} ARGUS RAG Evaluation System`, margin, pageHeight - 3);
+        doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - margin, pageHeight - 3, { align: 'right' });
+      };
+      
+      // Helper function to add multiline text with wrapping
+      const addWrappedText = (text, x, y, maxWidth, lineHeight) => {
+        if (!text) return 0;
+        
+        const lines = doc.splitTextToSize(text, maxWidth);
+        const totalHeight = lines.length * lineHeight;
+        
+        for (let i = 0; i < lines.length; i++) {
+          doc.text(lines[i], x, y + (i * lineHeight));
+        }
+        
+        return totalHeight;
+      };
+      
+      // Process each result row
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const rowHeight = 20; // Base row height
+        const rowFill = i % 2 === 0 ? 255 : 245; // Alternate row colors
+        
+        // Check if we need to start a new page
+        if (yPos + rowHeight > pageContentHeight) {
+          addNewPage();
+        }
+        
+        // Draw row background
+        doc.setFillColor(rowFill, rowFill, rowFill);
+        doc.setDrawColor(220, 220, 220);
+        doc.rect(margin, yPos, pageWidth - (margin * 2), rowHeight, 'FD');
+        
+        // Draw text content with proper wrapping
+        let colX = margin + 5;
+        
+        // User query
+        doc.setTextColor(50, 50, 50);
+        addWrappedText(result.user_input, colX, yPos + 5, colWidths.userQuery - 10, 4);
+        
+        // Generated response
+        colX += colWidths.userQuery;
+        addWrappedText(result.response, colX, yPos + 5, colWidths.generatedResponse - 10, 4);
+        
+        // Reference answer
+        colX += colWidths.generatedResponse;
+        addWrappedText(result.reference, colX, yPos + 5, colWidths.referenceAnswer - 10, 4);
+        
+        yPos += rowHeight;
+      }
+      
+      // Add footer to first page
+      addFooter(1);
+      
+      // Save the PDF
+      doc.save('argus_rag_evaluation_results.pdf');
+      
     } catch (error) {
-      // Add a check before using console
       if (typeof console !== 'undefined') {
         console.error('Error generating PDF:', error);
       }
       alert('There was an error generating the PDF. Please try again.');
+    } finally {
+      // Clean up loading indicator
+      if (loadingElement && document.body.contains(loadingElement)) {
+        document.body.removeChild(loadingElement);
+      }
     }
   };
 
@@ -221,17 +273,15 @@ const ResultsTable = ({ results, metrics }) => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Evaluation Results</h2>
         
-        <motion.button
+        <button
           onClick={downloadPDF}
-          className="px-4 py-2 bg-secondary-700 text-white font-medium rounded-md shadow-sm hover:bg-secondary-800 focus:outline-none focus:ring-2 focus:ring-secondary-700 focus:ring-offset-2 transition-colors flex items-center"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          className="px-4 py-2 bg-secondary-700 text-white font-medium rounded-md shadow-sm hover:bg-secondary-800 focus:outline-none focus:ring-2 focus:ring-secondary-700 focus:ring-offset-2 transition-colors flex items-center hover:scale-105 active:scale-95"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
           </svg>
           Download PDF
-        </motion.button>
+        </button>
       </div>
 
       {metrics && (
@@ -249,13 +299,13 @@ const ResultsTable = ({ results, metrics }) => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 User Query
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Generated Response
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Reference Answer
               </th>
             </tr>
@@ -263,9 +313,9 @@ const ResultsTable = ({ results, metrics }) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {results.map((result, index) => (
               <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">{result.user_input}</td>
-                <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">{result.response}</td>
-                <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">{result.reference}</td>
+                <td className="px-6 py-4 text-left whitespace-normal text-sm text-gray-900">{result.user_input}</td>
+                <td className="px-6 py-4 text-left whitespace-normal text-sm text-gray-900">{result.response}</td>
+                <td className="px-6 py-4 text-left whitespace-normal text-sm text-gray-900">{result.reference}</td>
               </tr>
             ))}
           </tbody>
