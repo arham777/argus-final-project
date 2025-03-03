@@ -26,7 +26,7 @@ def query_rag(prompt, group_id=12, session_id=111):
         "query": prompt,
         "session_id": session_id
     }
-
+    
     for attempt in range(MAX_RETRIES):
         try:
             response = requests.get(
@@ -50,9 +50,9 @@ def query_rag(prompt, group_id=12, session_id=111):
             
         except requests.exceptions.ConnectionError:
             return "Error: Unable to connect to the server. Please check your network connection."
-
+            
         except requests.exceptions.RequestException as e:
-                return f"Error: {str(e)}"
+            return f"Error: {str(e)}"
             
         except Exception as e:
             return f"Unexpected error: {str(e)}"
